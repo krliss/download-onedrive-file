@@ -1,17 +1,16 @@
 import os
-import datetime
+from datetime import datetime, timezone 
 import logging
 import base64
 import requests
 import json
-from opencensus.ext.azure.log_exporter import AzureLogHandler
 from azure.storage.blob import BlobServiceClient, ContainerClient
 import azure.functions as func
 
 
 def main(mytimer: func.TimerRequest) -> None:
-    utc_timestamp = datetime.datetime.utcnow().replace(
-        tzinfo=datetime.timezone.utc).isoformat()
+    utc_timestamp = datetime.utcnow().replace(
+        tzinfo=timezone.utc).isoformat()
 
     if mytimer.past_due:
         logging.info('The timer is past due!')
@@ -30,14 +29,15 @@ def main(mytimer: func.TimerRequest) -> None:
     if not container.exists():
         blob_service_client.create_container(container_name) 
     resultUrl = create_onedrive_directdownload("https://knowit.sharepoint.com/:x:/r/sites/org-165-Internal/Shared%20Documents/Semesterlista%20SOL%202021%20-%20Copy.xlsx?d=w49625d1c2dbe4e44a66490f7cc6da5ef&csf=1&web=1&e=nSsj4w")
-    r = requests.get(resultUrl)
+    headers = {'content-type': 'application/octet-stream'}
+    r = requests.get(resultUrl, headers=headers)
     # Create a blob client using the local file name as the name for the blob 
     now = datetime.now()
     blob_name = now.strftime("employees_copy%m%d%Y-%H:%M:%S.xlsx")
     blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
     
     # Upload the created file
-    blob_client.upload_blob(json.dumps(r))
+    blob_client.upload_blob(r)
 
     logging.info('Python timer trigger function ran at %s', utc_timestamp)
 
