@@ -5,3 +5,6 @@
 azure-storage-blob
 azure-functions
 requests
+msal
+jwt
+pandas
